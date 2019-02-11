@@ -6,3 +6,7 @@ exports.logWithSpinner = (symbol, msg) => {
   spinner.text = ' ' + msg
   spinner.start()
 }
+
+exports.stopSpinner = (persist) => {
+  spinner.stop()
+}
