@@ -1,7 +1,8 @@
 const chalk = require('chalk')
+const Generator = require('./Generator')
 const writeFileTree = require('./util/writeFileTree')
 const { installDeps } = require('./util/installDeps')
-const sortObject = require('./util/sortObject')
+// const sortObject = require('./util/sortObject')
 
 
 const {
@@ -22,7 +23,7 @@ module.exports = class Creator {
   }
 
   async create (cliOptions = {}, preset = null) {
-    const { run, name, context} = this
+    const { run, name, context, createCompleteCbs} = this
 
     preset = defaults.presets.default
 
@@ -36,7 +37,9 @@ module.exports = class Creator {
     const packageManager = "yarn"
     logWithSpinner(`✨`, `Creating project in ${chalk.yellow(context)}.`)
 
-    const latest = require(`../package.json`).version
+    // Let me write it dead for now
+    const latest = "3.4.0"
+
     const pkg = {
       name,
       version: '0.1.0',
@@ -56,28 +59,27 @@ module.exports = class Creator {
     stopSpinner()
     console.log(`⚙  Installing CLI plugins. This might take a while...`)
 
-    await installDeps(context, packageManager, cliOptions.registry)
+    // await installDeps(context, packageManager, cliOptions.registry)
 
     const plugins = await this.resolvePlugins(preset.plugins)
     
+    // run generator
+    const generator = new Generator(context, {
+      pkg,
+      plugins,
+      completeCbs: createCompleteCbs
+    })
+    await generator.generate({
+      extractConfigFiles: preset.useConfigFiles
+    })
     var s = 1
   }
 
   async resolvePlugins (rawPlugins) {
-    // ensure cli-service is invoked first
-    rawPlugins = sortObject(rawPlugins, ['@vue/cli-service'], true)
     const plugins = []
     for (const id of Object.keys(rawPlugins)) {
       const apply = loadModule(`${id}/generator`, this.context) || (() => {})
       let options = rawPlugins[id] || {}
-      if (options.prompts) {
-        const prompts = loadModule(`${id}/prompts`, this.context)
-        if (prompts) {
-          log()
-          log(`${chalk.cyan(options._isPreset ? `Preset options:` : id)}`)
-          options = await inquirer.prompt(prompts)
-        }
-      }
       plugins.push({ id, apply, options })
     }
     return plugins

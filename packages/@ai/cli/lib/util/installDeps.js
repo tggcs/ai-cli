@@ -19,31 +19,6 @@ function executeCommand (command, args, targetDir) {
       cwd: targetDir,
       stdio: ['inherit', 'inherit', 'pipe']
     })
-    child.stderr.on('data', buf => {
-      const str = buf.toString()
-      if (/warning/.test(str)) {
-        return
-      }
-  
-      // // progress bar
-      // const progressBarMatch = str.match(/\[.*\] (\d+)\/(\d+)/)
-      // if (progressBarMatch) {
-      //   // since yarn is in a child process, it's unable to get the width of
-      //   // the terminal. reimplement the progress bar ourselves!
-      //   renderProgressBar(progressBarMatch[1], progressBarMatch[2])
-      //   return
-      // }
-  
-      process.stderr.write(buf)
-    })
-
-    child.on('close', code => {
-      if (code !== 0) {
-        reject(`command failed: ${command} ${args.join(' ')}`)
-        return
-      }
-      resolve()
-    })
   })
 }
 
